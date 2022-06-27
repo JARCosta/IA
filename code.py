@@ -141,37 +141,44 @@ class Takuzu(Problem):
         res_set = set(res)
         if len(res_set) == 1:
             return res[0]
-        if len(res_set) == 2:
+        elif len(res_set) == 2:
             return -1
         else:
             return 2
 
     def adjacents_in_line_column(self, state: TakuzuState, line: int, column: int):
+        res = []
         if column < state.board.size - 2:
             if state.board.list[line][column + 1] == state.board.list[line][column + 2] and \
                     state.board.list[line][column + 1] != 2:
-                return state.board.list[line][column + 1]
+                res.append(state.board.list[line][column + 1])
         if 0 < column < state.board.size - 1:
             if state.board.list[line][column - 1] == state.board.list[line][column + 1] and \
                     state.board.list[line][column + 1] != 2:
-                return state.board.list[line][column + 1]
+                res.append(state.board.list[line][column + 1])
         if column > 1:
             if state.board.list[line][column - 1] == state.board.list[line][column - 2] and \
                     state.board.list[line][column - 1] != 2:
-                return state.board.list[line][column - 1]
+                res.append(state.board.list[line][column - 1])
         if line < state.board.size - 2:
             if state.board.list[line + 1][column] == state.board.list[line + 2][column] and \
                     state.board.list[line + 1][column] != 2:
-                return state.board.list[line + 1][column]
+                res.append(state.board.list[line + 1][column])
         if 0 < line < state.board.size - 1:
             if state.board.list[line - 1][column] == state.board.list[line + 1][column] and \
                     state.board.list[line + 1][column] != 2:
-                return state.board.list[line + 1][column]
+                res.append(state.board.list[line + 1][column])
         if line > 1:
             if state.board.list[line - 1][column] == state.board.list[line - 2][column] and \
                     state.board.list[line - 1][column] != 2:
-                return state.board.list[line - 1][column]
-        return 2
+                res.append(state.board.list[line - 1][column])
+        res_set = set(res)
+        if len(res_set) == 1:
+            return res[0]
+        elif len(res_set) == 2:
+            return -1
+        else:
+            return 2
 
     def actions(self, state: TakuzuState):
         """Retorna uma lista de ações que podem ser executadas a
@@ -186,6 +193,8 @@ class Takuzu(Problem):
                         return []
                     if x == 2:
                         y = self.adjacents_in_line_column(state, i, j)
+                        if y == -1:
+                            return []
                         if y == 2:
                             action_list.append((i, j, 0))
                             action_list.append((i, j, 1))
@@ -197,7 +206,9 @@ class Takuzu(Problem):
                         return [(i, j, 0)]
                     elif x == 0:
                         return [(i, j, 1)]
-        return action_list
+        if len(action_list) == 0:
+            return []
+        return [action_list[0], action_list[1]]
 
     def result(self, state: TakuzuState, action):
         """Retorna o estado resultante de executar a 'action' sobre
@@ -230,14 +241,13 @@ class Takuzu(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes."""
         # TODO
-        if any(2 in line for line in state.board.list):
+        if 2 in state.board.list:
             return False
-        line_tuple = [tuple(lst) for lst in state.board.list]
-        column_list = state.board.list.transpose()
-        column_tuple = [tuple(lst) for lst in column_list]
-        if state.board.size != len(set(line_tuple)) or state.board.size != len(set(column_tuple)):
+
+        if len(np.unique(state.board.list, axis=0)) != state.board.size or\
+                len(np.unique(np.rot90(state.board.list), axis=0)) != state.board.size:
             return False
-        return True if self.adjacent_check(state) else False
+        return self.adjacent_check(state)
 
 
     def h(self, node: Node):
@@ -252,12 +262,20 @@ class Takuzu(Problem):
 if __name__ == "__main__":
     # TODO:
     # Ler o ficheiro do standard input,
+    #start = time.time()
     board = Board.parse_instance_from_stdin()
     problem = Takuzu(board)
     # Obter o nó solução usando a procura em profundidade:
     goal_node = depth_first_tree_search(problem)
+
+
     # Verificar se foi atingida a solução
+
     print(goal_node.state.board, end="")
+    with open('readme.txt', 'w') as f:
+        f.write(goal_node.state.board.__repr__())
+    #end = time.time()
+    #print(end - start)
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
